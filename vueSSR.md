@@ -1,16 +1,18 @@
-# SSR
+# VUE SSR 服务端渲染
 [TOC]
 
-## 关于SSR
-### SSR是什么(Server Side Rendering)
+## SSR是什么(Server Side Rendering)
 * SSR: 服务器端渲染: 
 > 简单来说就是在服务器上把数据和模板拼接好以后发送给客户端显示。
+
+
 
 ## CSR（客户端渲染）
 * CSR: 客户端渲染
 > html 仅仅作为静态文件，客户端端在请求时，服务端不做任何处理，直接以原文件的形式返回给客户端客户端，然后根据 html 上的 JavaScript，生成 DOM 插入 html。
 
 
+![avatar](https://s2.ax1x.com/2019/03/28/A0ppc9.png)
 [服务端渲染 vs 客户端渲染](https://www.jianshu.com/p/656a1666a1c5?utm_source=oschina-app)
 
 ## SSR到CSR的演变
@@ -18,19 +20,19 @@
 * asp,jsp,php,..（前端负责切图，js动效果，静态页面）
 * 前后端分离 （ajax）
 
-	> Ajax提供数据接口，就此复杂度从JSP里已到了浏览器的JavaScript，浏览器端变得很复杂，
+	> Ajax提供数据接口，就此复杂度从JSP里移到了浏览器的JavaScript，浏览器端变得很复杂，
 	> 
 * 单页应用（SPA）
-* Node
+* Node.js
 
 [前端工程化之路—前后端协作发展史](https://www.jianshu.com/p/b06091f53aa5)
 
 
-## CSR 模式的缺点
+## 客户端渲染模式的缺点
 * 对 SEO 不利。往往还需要服务端做同步渲染的降级方案。
 * 首屏渲染
 
-## SSR 的优点：
+## 服务端渲染模式的优点：
 * 对seo有利，对搜索引擎友好
 * 渲染路径较短，更快的内容到达时间
 
@@ -46,6 +48,9 @@
 
 
 ## 新时代下的SSR
+* 基于node服务器
+* 同构应用
+
 虽然ssr的做法又被提上了桌面，看似又回到了起点，但是与原先的jsp，asp等服务端渲染方法相比，目前前端的ssr做法更加高大上一点，强调同构应用，同一套代码技能在浏览器上跑，也能在node服务器上跑。
 
 ### 同构应用
@@ -58,12 +63,38 @@
 
 ### 准备工作
 首先在开始做之前，再大致梳理一下ssr模式与普通csr模式工作流程的异同。
-* csr模式
+* 单纯客户端渲染模式
 ![avatar](https://s2.ax1x.com/2019/03/26/AUrW79.png)
-* ssr模式
+
+``` js
+var app = createApp() // 1. 创建组件
+app.$mount("#app")    // 2. 将组件插入页面
+```
+
+
+
+
+
+* 服务端渲染模式
 而在服务端渲染模式下，后端在获取到组件后只需将其转换为字符串，写入responnse返回给前端即可，因此ssr模式下后台的流程简化为：
 ![avatar](
 https://s2.ax1x.com/2019/03/26/AUrvtI.png)
+
+``` js
+var app = createApp() // 1. 创建组件
+var renderer = require('vue-server-renderer').createRenderer({ // 2.创建渲染器
+    template: require('fs').readFileSync(path.join(__dirname, './src/template/index_ssr.html'), 'utf-8')
+})
+...
+renderer.renderToString(app, context, (err, html) => { // 3.渲染成字符串，写入response
+    ...
+    res.end(html)
+})
+...
+```
+* 同构条件下的客户端渲染模式
+> 所谓客户端激活，指的是 Vue 在浏览器端接管由服务端发送的静态 HTML，使其变为由 Vue 管理的动态 DOM 的过程。
+![7ae81e6b9cac4c7bb8992ffd0abcc427.png](evernotecid://81FF9D19-9E7B-436D-BBB7-27841F7DFCAB/appyinxiangcom/21477520/ENResource/p142)
 
 
 ![avatar](https://s2.ax1x.com/2019/03/27/Aas1dH.png)
@@ -77,19 +108,17 @@ npm install vue vue-server-renderer --save
 npm install express --save
 ```
 
-
-但是光把html字符串吐给前端还不够，那样只是一个静态页面，之前组件中定义的事件交互，与vnode之间的响应关系等都在字符串化后被抹去了。所以在服务端渲染内容到达客户端后，我们还需要在客户端对其进行“激活”。这次相当于我们有了最终产物：组件的html节点，但是需要为节点注入必要的信息。
-客户端的流程如下：
-![avatar](https://s2.ax1x.com/2019/03/27/Aas3od.png)
-
-
-
-
-服务端与浏览器端的底层组件创建过程代码均可复用，只是实例化组件后的用途不同，因此服务端和浏览器端分别需要两个入口文件server-entry.js及client-entry.js，以及相应的两个打包文件webpack.server.config.js及webpack.client.config.js.底层的具体业务逻辑实现则完全可以复用。
+最后，服务端与浏览器端的底层组件创建过程代码均可复用，只是实例化组件后的用途不同，因此服务端和浏览器端分别需要两个入口文件server-entry.js及client-entry.js，以及相应的两个打包文件webpack.server.config.js及webpack.client.config.js.底层的具体业务逻辑实现则完全可以复用。
 ![avatar](https://s2.ax1x.com/2019/03/27/AasGFA.png)
 
 
+
+
+
+
 ### 打包配置
+* normalRenderer
+* bundleRenderer （把入口js文件打成json格式，再用bundleRenderer去读取这个json）
 #### webpack.client.js
 * 引入vueSSRClientPlugin
 ``` js
@@ -125,9 +154,9 @@ module.exports = output
 
 
 ```
-** 引入改插件的目的是为我们客户端打包出来的资源文件生成一个名称固定的json，当在服务器端进行渲染时传入这个json文件，json文件里列出的client-entry.js等文件都会被检索并写如html中，等到浏览器加载到页面后，客户端代码便会执行了。
+** 引入该插件的目的是为我们客户端打包出来的资源文件生成一个名称固定的json，当在服务器端进行渲染时传入这个json文件，json文件里列出的client-entry.js等文件都会被检索并写如html中，等到浏览器加载到页面后，客户端代码便会执行了。
 #### webpack.server.js
-* 引入 VueSSRServerPlugin
+* 引入 VueSSRServerPlugin，VueSSRClientPlugin
 * webpack 配置为node环境
 * vue-style-loader
 
@@ -258,7 +287,7 @@ if (window.__INITIAL_STATE__) {
 
 
 
-### 客户端激活原理（hydrate）
+### 客户端激活（hydrate）
 > 所谓客户端激活，指的是 Vue 在浏览器端接管由服务端发送的静态 HTML，使其变为由 Vue 管理的动态 DOM 的过程。
 > 由于服务器已经渲染好了 HTML，我们显然无需将其丢弃再重新创建所有的 DOM 元素。相反，我们需要"激活"这些静态的 HTML，然后使他们成为动态的（能够响应后续的数据变化）。
 > 如果你检查服务器渲染的输出结果，你会注意到应用程序的根元素上添加了一个特殊的属性：
@@ -275,6 +304,7 @@ if (window.__INITIAL_STATE__) {
 
 ![4542eab9709a9743511112464bb5e597.png](evernotecid://81FF9D19-9E7B-436D-BBB7-27841F7DFCAB/appyinxiangcom/21477520/ENResource/p125)
 
+![avatar](https://s2.ax1x.com/2019/03/28/A09QxJ.png)
 
 * vue中hydrate方法
 
@@ -315,4 +345,7 @@ export default {
     * 灰度策略
 
 
-)
+
+
+
+
