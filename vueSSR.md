@@ -56,6 +56,8 @@
 ### 同构应用
 
 * 得益于node.js的技术支持，一套代码前后端都搞定
+
+![avatar](https://s2.ax1x.com/2019/03/29/A0aMfP.png)
 ![avatar](https://s2.ax1x.com/2019/03/26/AUD7Zj.png)
 
 
